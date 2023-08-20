@@ -45,8 +45,12 @@ def getLinksAndNames(soup):
                 createFolders(item.text)
             #handle list items
             if item.name == 'li':
-                print(item.text)
-                print(item.href)
+                try:
+                    print(item.text)
+                    print('https://en.wikipedia.org/' + item.find('a', href=True)['href'])
+                except:
+                    print("Error with: "+item.text)
+
 
 def createFolders(headingName):
     #folder creations
