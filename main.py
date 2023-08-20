@@ -20,8 +20,8 @@ download specific image
 
 #get main page html code
 def main(url):
-    getLinksAndNames(
-        parsePage(url))
+    soup = parsePage(url)
+    getLinksAndNames(soup)
 
 def parsePage(url):
      #content of URL
@@ -31,18 +31,23 @@ def parsePage(url):
     return soup
 
 def getLinksAndNames(soup):
+    headingCount = 0
     #Find div's w/ div-col class
-    for item in soup.find_all("div", {"class": "div-col"}):
-        #Grab all lists
-        unorderedLists = item.find_all('ul')
-        for unorderedList in unorderedLists:
-            listItems = unorderedList.find_all('li')
-            for listItem in listItems:
-                #print bird name
-               print(listItem.text)
-               itemHref = listItem.find('a')
-                #print link to bird page
-               print("https://en.wikipedia.org"+itemHref['href'])
+    for item in soup.find_all("div", {"class": "mw-parser-output"}):
+        #Grab all lists and h2 tags
+        elements = item.find_all(['h2', 'li'])
+        for item in elements:
+            #stop at end of content
+            if item.find(id='See_also'):
+                break
+            #handle headings
+            if item.name == 'h2':
+                print ("HEADING")
+            #handle list items
+            if item.name == 'li':
+                print(item.text)
+
+            
 
 
 main('https://en.wikipedia.org/wiki/List_of_birds_of_Michigan')
