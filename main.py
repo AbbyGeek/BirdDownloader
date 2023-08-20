@@ -42,10 +42,23 @@ def getLinksAndNames(soup):
                 break
             #handle headings
             if item.name == 'h2':
-                print ("HEADING")
+                createFolders(item.text)
             #handle list items
             if item.name == 'li':
                 print(item.text)
+                print(item.href)
+
+def createFolders(headingName):
+    #folder creations
+    try:
+        if headingName.endswith("[edit]"):
+            headingName = headingName[:-len("[edit]")]
+        os.mkdir(headingName)
+    except:
+        print("Folder named "+headingName+" alreay exists")
+
+def downloadPics (Name, href):
+    return
 
             
 
