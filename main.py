@@ -9,10 +9,14 @@ method to navigate to bird page and download image into correct folder
 #get main page html code
 def main(url):
     soup = parsePage(url)
-    namesDict = getLinksAndNames(soup)
-    photoGrabber(namesDict)
-    print("In the create folder method, there needs to be a way to return a dictionary with 'h2 name': [name, name, name]")
-    print("pass this dictionary into the photodownloader method so it can match up the bird names w/ the correct folder they're supposed to be in")
+    indexDict = getLinksAndNames(soup)
+    #this is for testing only. Try and get urls into index list.
+    for item in indexDict:
+        print()
+        print (item)
+        for name in indexDict[item]:
+            print(name + " - " + indexDict[item][name])
+    photoGrabber(indexDict)
 
 def parsePage(url):
      #content of URL
@@ -22,7 +26,7 @@ def parsePage(url):
     return soup
 
 def getLinksAndNames(soup):
-    nameDict = {}
+    indexDict = {}
     #Find div's w/ div-col class
     for item in soup.find_all("div", {"class": "mw-parser-output"}):
         #Grab all lists and h2 tags
@@ -33,30 +37,41 @@ def getLinksAndNames(soup):
                 break
             #handle headings
             if item.name == 'h2':
-                createFolders(item.text)
+                #clear category items when starting a new category
+                categoryItems = {}
+                headingName = getHeadingName(item.text)
+                #create the folder
+                createFolders(headingName)
+                indexDict.update({headingName:categoryItems})
             #handle list items
             if item.name == 'li':
                 try:
                     name = item.text
                     url = 'https://en.wikipedia.org/' + item.find('a', href=True)['href']
-                    nameDict.update({name: url})
+                    categoryItems.update({name: url})
+                    indexDict[headingName] = categoryItems
                 except:
                     print("Error with: "+item.text)
-    return nameDict
+    return indexDict
 
-
-def createFolders(headingName):
-    #folder creations
+def getHeadingName(headingName):
     try:
         if headingName.endswith("[edit]"):
             headingName = headingName[:-len("[edit]")]
+    except:
+        print("Folder named "+headingName+" alreay exists")
+    return(headingName)
+    
+def createFolders(headingName):
+    #folder creations
+    try:
         os.mkdir(headingName)
     except:
         print("Folder named "+headingName+" alreay exists")
 
-def photoGrabber(namesDict):
-    for item in namesDict:
-        itemUrl = namesDict[item]
+def photoGrabber(indexDict):
+    for item in indexDict:
+        itemUrl = indexDict[item]
         urlList = photoUrlGrabber(item, itemUrl)
         photoDownloader(item, urlList)
 
