@@ -2,20 +2,12 @@ from bs4 import *
 import requests
 import os
 
-'''
-ToDo:
-method to navigate to bird page and download image into correct folder
-'''
+# Get family descriptions to save to the indexDict variable.
+
 #get main page html code
 def main(url):
     soup = parsePage(url)
     indexDict = getLinksAndNames(soup)
-    #this is for testing only. Try and get urls into index list.
-    for item in indexDict:
-        print()
-        print (item)
-        for name in indexDict[item]:
-            print(name + " - " + indexDict[item][name])
     photoGrabber(indexDict)
 
 def parsePage(url):
@@ -70,40 +62,36 @@ def createFolders(headingName):
         print("Folder named "+headingName+" alreay exists")
 
 def photoGrabber(indexDict):
-    for item in indexDict:
-        itemUrl = indexDict[item]
-        urlList = photoUrlGrabber(item, itemUrl)
-        photoDownloader(item, urlList)
+    for family in indexDict:
+        imgDictList = []
+        for itemName in indexDict[family]:
+            imgDict = {}
+            url = indexDict[family][itemName]
+            itemSoup = parsePage(url)
+            infobox = itemSoup.find("table", {"class": "infobox"})
+            anchors = infobox.find_all('a')
+            for anchor in anchors:
+                img = anchor.find("img")
+                if img != None:
+                    src = img["src"]
+                    imgUrl = "http:" + src
+                    #something in here is not
+                    if imgDict:
+                         imgDict[itemName + ", male"] = imgDict.pop(itemName)
+                         imgDict.update({itemName + ", female": imgUrl})
+                    else:
+                        imgDict.update({itemName:imgUrl})
+                else:
+                    print(imgDict)
+                    break
+        #downloader(imgDictList, family)
 
-def photoUrlGrabber(item, itemUrl):
-    imageUrlList = []
-    #print name of item
-    #parse item page
-    itemSoup = parsePage(itemUrl)
-    #find table w/ main photos/info
-    itemTable = itemSoup.find(("table", {"class": "mw-parser-output"}))
-    anchors = itemTable.find_all('a')
-    for anchor in anchors:
-        images = anchor.find_all('img')
-        for image in images:
-            #if image is an icon (commonly the first anchor following main pic(s)), or map.
-            #this should be cleaned up
-            source = image['src']
-            if source == "//upload.wikimedia.org/wikipedia/commons/thumb/8/8a/OOjs_UI_icon_edit-ltr.svg/15px-OOjs_UI_icon_edit-ltr.svg.png" or source.endswith("map.svg.png"): 
-                break
-            imageUrlList.append("http:" + source)
-    if len(imageUrlList) == 0:
-        #Need to handle when empty list is returned
-        print("No URLs found for " + item)
-    return(imageUrlList)
-
-def photoDownloader(item, urlList):
-    print(item)
+def downloader(imgDictList, family):
+    cwd = os.getcwd()
+    print(cwd)
+    os.chdir(cwd+"/"+family)
+    for item in imgDictList:
+        break
     return
-
-
-
-            
-
 
 main('https://en.wikipedia.org/wiki/List_of_birds_of_Michigan')
