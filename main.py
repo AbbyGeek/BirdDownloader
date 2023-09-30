@@ -1,14 +1,13 @@
 from bs4 import *
 import requests
 import os
-
-# Get family descriptions to save to the indexDict variable.
+import urllib.request
 
 #get main page html code
 def main(url):
-    soup = parsePage(url)
-    indexDict = getLinksAndNames(soup)
-    photoGrabber(indexDict)
+     soup = parsePage(url)
+     indexDict = getLinksAndNames(soup)
+     photoGrabber(indexDict)
 
 def parsePage(url):
      #content of URL
@@ -62,36 +61,42 @@ def createFolders(headingName):
         print("Folder named "+headingName+" alreay exists")
 
 def photoGrabber(indexDict):
+    #Iterate through one family at a time
     for family in indexDict:
-        imgDictList = []
+        imgDict = {}
+        #Iterate through items in family
         for itemName in indexDict[family]:
-            imgDict = {}
             url = indexDict[family][itemName]
+            #parse item's page, find the 'info box' section and extract all anchor tags
             itemSoup = parsePage(url)
             infobox = itemSoup.find("table", {"class": "infobox"})
-            anchors = infobox.find_all('a')
-            for anchor in anchors:
-                img = anchor.find("img")
-                if img != None:
-                    src = img["src"]
-                    imgUrl = "http:" + src
-                    #something in here is not
-                    if imgDict:
-                         imgDict[itemName + ", male"] = imgDict.pop(itemName)
-                         imgDict.update({itemName + ", female": imgUrl})
+            tableRows = infobox.find_all('td')
+            for row in tableRows:
+                anchor = row.find('a')
+                if anchor != None:
+                    #find the image in the anchor tag
+                    img = anchor.find("img")
+                    #if there is an image
+                    if img != None:
+                        src = img["src"]
+                        imgUrl = "http:" + src
+                        if itemName in imgDict:
+                            imgDict[itemName + ", male"] = imgDict.pop(itemName)
+                            imgDict.update({itemName + ", female": imgUrl})
+                        else:
+                            imgDict.update({itemName:imgUrl})
+                    #if the anchor tag has no image element within
                     else:
-                        imgDict.update({itemName:imgUrl})
-                else:
-                    print(imgDict)
-                    break
-        #downloader(imgDictList, family)
+                        break
+        downloader(imgDict, family)
 
-def downloader(imgDictList, family):
-    cwd = os.getcwd()
-    print(cwd)
-    os.chdir(cwd+"/"+family)
-    for item in imgDictList:
-        break
-    return
+def downloader(imgDict, family):
+    rootDir = os.getcwd()
+    os.chdir(os.path.join(os.path.abspath(os.path.curdir),family))
+    familyDir = os.getcwd()
+    for itemName in imgDict:
+        urllib.request.urlretrieve(imgDict[itemName],itemName+".jpg")
+    os.chdir(rootDir)
+
 
 main('https://en.wikipedia.org/wiki/List_of_birds_of_Michigan')
