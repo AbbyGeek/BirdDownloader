@@ -1,13 +1,21 @@
+import sys
 from bs4 import *
 import requests
 import os
 import urllib.request
 
 #get main page html code
-def main(url):
-     soup = parsePage(url)
-     indexDict = getLinksAndNames(soup)
-     photoGrabber(indexDict)
+def main():
+    url="https://en.wikipedia.org/wiki/List_of_birds_of_Michigan"
+    soup = parsePage(url)
+    indexDict = getLinksAndNames(soup)
+    photoGrabber(indexDict)
+
+def inputs():
+    url = input("Enter URL: ")
+    state = input("Enter State: ")
+    stateUrlDict = {state:url}
+    return stateUrlDict
 
 def parsePage(url):
      #content of URL
@@ -46,15 +54,11 @@ def getLinksAndNames(soup):
     return indexDict
 
 def getHeadingName(headingName):
-    try:
-        if headingName.endswith("[edit]"):
-            headingName = headingName[:-len("[edit]")]
-    except:
-        print("Folder named "+headingName+" alreay exists")
+    if headingName.endswith("[edit]"):
+        headingName = headingName[:-len("[edit]")]
     return(headingName)
     
 def createFolders(headingName):
-    #folder creations
     try:
         os.mkdir(headingName)
     except:
@@ -63,6 +67,8 @@ def createFolders(headingName):
 def photoGrabber(indexDict):
     #Iterate through one family at a time
     for family in indexDict:
+        print("~~~~~~~~~~~~~~~~~~~~~")
+        print("Grabbing photo URLs for: %s" %family)
         imgDict = {}
         #Iterate through items in family
         for itemName in indexDict[family]:
@@ -91,12 +97,23 @@ def photoGrabber(indexDict):
         downloader(imgDict, family)
 
 def downloader(imgDict, family):
+    print("Downloading photos for: %s" %family)
+    print("~~~~~~~~~~~~~~~~~~~~~")
     rootDir = os.getcwd()
     os.chdir(os.path.join(os.path.abspath(os.path.curdir),family))
     familyDir = os.getcwd()
     for itemName in imgDict:
-        urllib.request.urlretrieve(imgDict[itemName],itemName+".jpg")
+        imgUrl = imgDict[itemName]
+        imgData = requests.get(imgUrl).content
+        try:
+            with open(itemName+".jpg", 'wb') as handler:
+                handler.write(imgData)
+                #Certain files aren't being downloaded fully. Their file size is 2kb while other complete files are ~15-20kb.
+                #Cannot find difference between the different images. They all have the same extention and there's no common difference between the files that I can see.
+                #Possibly memory overload?
+        except:
+            print(itemName + " already exists")
     os.chdir(rootDir)
 
 
-main('https://en.wikipedia.org/wiki/List_of_birds_of_Michigan')
+main()
